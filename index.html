@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC CME Basis — Contango & Backwardation | HerdVibe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #0a0a0a;
+  --surface:      #111111;
+  --surface2:     #161616;
+  --border:       #1e1e1e;
+  --text:         #e0e0e0;
+  --muted:        #555;
+  --muted2:       #888;
+  --contango:     #00c896;
+  --contango-dim: rgba(0,200,150,0.10);
+  --back:         #ff4d6d;
+  --back-dim:     rgba(255,77,109,0.10);
+  --btc:          #f7931a;
+  --mono:         'JetBrains Mono', monospace;
+  --sans:         'Noto Sans KR', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  padding: 20px 16px 32px;
+  min-height: 100vh;
+}
+
+/* ── 헤더 ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.title h1 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.title p {
+  font-size: 11px;
+  color: var(--muted2);
+  margin-top: 3px;
+  font-family: var(--mono);
+}
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  font-family: var(--mono);
+  align-items: center;
+}
+.leg { display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── 스탯 카드 ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 14px;
+}
+.card-label {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 5px;
+}
+.card-value {
+  font-size: 19px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.card-sub {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  margin-top: 4px;
+}
+.c-btc  { color: var(--btc); }
+.c-pos  { color: var(--contango); }
+.c-neg  { color: var(--back); }
+.c-w    { color: #fff; }
+
+/* ── 범위 버튼 ── */
+.range-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.rbtn {
+  padding: 4px 11px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted2);
+  font-size: 11px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rbtn:hover { border-color: #444; color: #ccc; }
+.rbtn.active { background: var(--btc); border-color: var(--btc); color: #000; font-weight: 600; }
+
+/* ── 차트 박스 ── */
+.chart-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 14px 10px;
+  margin-bottom: 10px;
+}
+.chart-title {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+/* ── 가이드 박스 ── */
+.guide {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--btc);
+  border-radius: 6px;
+  padding: 13px 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: #999;
+}
+.guide strong { color: #fff; }
+.guide .g-pos { color: var(--contango); font-weight: 600; }
+.guide .g-neg { color: var(--back);     font-weight: 600; }
+
+/* ── 상태바 ── */
+.statusbar {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-align: right;
+  margin-top: 6px;
+}
+
+/* ── 로딩 ── */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,10,0.93);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 999;
+}
+.spinner {
+  width: 38px; height: 38px;
+  border: 3px solid var(--border);
+  border-top-color: var(--btc);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-msg { font-family: var(--mono); font-size: 12px; color: var(--muted2); }
+
+@media (max-width: 560px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .card-value { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="load-msg" id="load-msg">데이터 로딩 중...</div>
+</div>
+
+<!-- 헤더 -->
+<div class="header">
+  <div class="title">
+    <h1>₿ BTC CME Basis &mdash; Contango &amp; Backwardation</h1>
+    <p>CME 선물(BTC=F) vs 현물 스프레드 · 매일 자동 업데이트</p>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--contango)"></div><span style="color:var(--contango)">Contango</span></div>
+    <div class="leg"><div class="leg-dot" style="background:var(--back)"></div><span style="color:var(--back)">Backwardation</span></div>
+  </div>
+</div>
+
+<!-- 스탯 카드 -->
+<div class="stats">
+  <div class="card">
+    <div class="card-label">BTC 현물</div>
+    <div class="card-value c-btc" id="s-price">—</div>
+    <div class="card-sub" id="s-date">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">현재 Basis</div>
+    <div class="card-value c-w" id="s-basis">—</div>
+    <div class="card-sub" id="s-type">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Contango 비율</div>
+    <div class="card-value c-pos" id="s-cont">—</div>
+    <div class="card-sub" id="s-cont-days">선택 기간 기준</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Backwardation</div>
+    <div class="card-value c-neg" id="s-back">—</div>
+    <div class="card-sub" id="s-back-days">선택 기간 기준</div>
+  </div>
+</div>
+
+<!-- 범위 버튼 -->
+<div class="range-row">
+  <button class="rbtn" data-n="90"  onclick="setRange(this)">3개월</button>
+  <button class="rbtn" data-n="180" onclick="setRange(this)">6개월</button>
+  <button class="rbtn" data-n="365" onclick="setRange(this)">1년</button>
+  <button class="rbtn" data-n="730" onclick="setRange(this)">2년</button>
+  <button class="rbtn active" data-n="0" onclick="setRange(this)">전체</button>
+</div>
+
+<!-- 메인 차트 -->
+<div class="chart-box">
+  <div class="chart-title">
+    BTC 현물 가격 (USD, 로그 스케일) &nbsp;·&nbsp;
+    <span style="color:var(--contango)">■</span> Contango &nbsp;
+    <span style="color:var(--back)">■</span> Backwardation
+  </div>
+  <canvas id="priceChart" height="270"></canvas>
+</div>
+
+<!-- Basis 차트 -->
+<div class="chart-box">
+  <div class="chart-title">CME Basis % &nbsp;·&nbsp; 선물 프리미엄(+) / 디스카운트(−)</div>
+  <canvas id="basisChart" height="120"></canvas>
+</div>
+
+<div class="statusbar" id="statusbar">—</div>
+
+<!-- 가이드 -->
+<div class="guide">
+  <strong>📌 Contango / Backwardation 해석 가이드</strong><br>
+  <span class="g-pos">Contango (+)</span> : 선물 &gt; 현물 → CME 기관이 미래 상승을 기대하는 상태. 강세장 지속 구간에서 주로 나타남. Basis가 확대될수록 기관 레버리지 수요 강세.<br>
+  <span class="g-neg">Backwardation (−)</span> : 선물 &lt; 현물 → 기관이 현물 회피·리스크 오프 상태. 2022년 FTX 붕괴, LUNA 사태 직전에 선행하여 출현. 시장 불안의 조기 경보 신호.<br>
+  <span style="color:#444">※ Yahoo Finance BTC=F(CME 최근월물) 기준. 롤오버 시점 단기 왜곡은 ±15% 스파이크 필터로 제거됨. 매일 KST 11:00 자동 업데이트.</span>
+</div>
+
+<script>
+// ── 데이터 로드 ──────────────────────────────────────────────────────────────
+// GitHub Pages에서는 아래 경로를 실제 저장소 raw URL로 교체하세요:
+// const DATA_URL = 'https://raw.githubusercontent.com/YOUR_ID/YOUR_REPO/main/data/btc_basis.json';
+const DATA_URL = './data/btc_basis.json';
+
+let G = { dates:[], closes:[], basis:[], futures:[] };
+let priceChart = null;
+let basisChart = null;
+let currentN = 0;
+
+// ── 유틸 ─────────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const fmt = v => v >= 1000
+  ? '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  : '$' + v.toFixed(2);
+
+function slice(n) {
+  const total = G.dates.length;
+  const start = n === 0 ? 0 : Math.max(0, total - n);
+  return {
+    dates:   G.dates.slice(start),
+    closes:  G.closes.slice(start),
+    basis:   G.basis.slice(start),
+    futures: G.futures.slice(start),
+  };
+}
+
+// ── 배경 플러그인 (Contango/Backwardation 구간 색상) ─────────────────────────
+function makeBgPlugin(basisArr) {
+  return {
+    id: 'basisBg',
+    beforeDraw(chart) {
+      const { ctx, chartArea: ca, scales } = chart;
+      if (!ca) return;
+      const n = basisArr.length;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(ca.left, ca.top, ca.width, ca.height);
+      ctx.clip();
+      for (let i = 0; i < n; i++) {
+        const b = basisArr[i];
+        if (b === null || b === undefined) continue;
+        const x1 = scales.x.getPixelForValue(i);
+        const x2 = i < n - 1 ? scales.x.getPixelForValue(i + 1) : x1 + 2;
+        ctx.fillStyle = b >= 0
+          ? 'rgba(0,200,150,0.11)'
+          : 'rgba(255,77,109,0.11)';
+        ctx.fillRect(x1, ca.top, x2 - x1, ca.height);
+      }
+      ctx.restore();
+    }
+  };
+}
+
+// ── 스탯 업데이트 ─────────────────────────────────────────────────────────────
+function updateStats(s) {
+  // 가격
+  const lastClose = [...s.closes].reverse().find(v => v !== null);
+  $('s-price').textContent = lastClose ? fmt(lastClose) : '—';
+  $('s-date').textContent  = s.dates[s.dates.length - 1] || '—';
+
+  // Basis
+  const lastBasis = [...s.basis].reverse().find(v => v !== null);
+  if (lastBasis !== null && lastBasis !== undefined) {
+    const sign = lastBasis >= 0 ? '+' : '';
+    $('s-basis').textContent   = sign + lastBasis.toFixed(3) + '%';
+    $('s-basis').className     = 'card-value ' + (lastBasis >= 0 ? 'c-pos' : 'c-neg');
+    $('s-type').textContent    = lastBasis >= 0 ? '▲ Contango' : '▼ Backwardation';
+    $('s-type').style.color    = lastBasis >= 0 ? 'var(--contango)' : 'var(--back)';
+  } else {
+    $('s-basis').textContent = 'N/A';
+    $('s-type').textContent  = 'CME 데이터 대기 중';
+  }
+
+  // 비율
+  const valid = s.basis.filter(b => b !== null);
+  const total = valid.length;
+  if (total > 0) {
+    const cDays = valid.filter(b => b >= 0).length;
+    const bDays = total - cDays;
+    $('s-cont').textContent      = Math.round(cDays / total * 100) + '%';
+    $('s-back').textContent      = Math.round(bDays / total * 100) + '%';
+    $('s-cont-days').textContent = cDays + '일';
+    $('s-back-days').textContent = bDays + '일';
+  }
+}
+
+// ── 차트 렌더 ────────────────────────────────────────────────────────────────
+function render(n) {
+  const s = slice(n);
+
+  // 가격 차트
+  if (priceChart) priceChart.destroy();
+  const bgPlugin = makeBgPlugin(s.basis);
+  priceChart = new Chart($('priceChart').getContext('2d'), {
+    type: 'line',
+    plugins: [bgPlugin],
+    data: {
+      labels: s.dates,
+      datasets: [{
+        label: 'BTC 현물',
+        data: s.closes,
+        borderColor: '#f7931a',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0,
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 250 },
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          borderColor: '#2a2a2a',
+          borderWidth: 1,
+          titleColor: '#888',
+          bodyColor: '#fff',
+          titleFont:  { family: 'JetBrains Mono', size: 11 },
+          bodyFont:   { family: 'JetBrains Mono', size: 12 },
+          callbacks: {
+            label: ctx => ' 현물: ' + fmt(ctx.raw),
+            afterLabel: ctx => {
+              const ft = s.futures[ctx.dataIndex];
+              const b  = s.basis[ctx.dataIndex];
+              const lines = [];
+              if (ft)                lines.push(' 선물(CME): ' + fmt(ft));
+              if (b !== null && b !== undefined) {
+                const sign = b >= 0 ? '+' : '';
+                const type = b >= 0 ? 'Contango ▲' : 'Backwardation ▼';
+                lines.push(` Basis: ${sign}${b.toFixed(3)}%  ${type}`);
+              }
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color:'#444', font:{ family:'JetBrains Mono', size:10 }, maxTicksLimit:10, maxRotation:0 },
+          grid:  { color:'rgba(255,255,255,0.03)' }
+        },
+        y: {
+          type: 'logarithmic',
+          position: 'right',
+          ticks: {
+            color:'#444',
+            font: { family:'JetBrains Mono', size:10 },
+            callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'K' : '$' + v
+          },
+          grid: { color:'rgba(255,255,255,0.03)' }
+        }
+      }
+    }
+  });
+
+  // Basis 차트
+  const barColors = s.basis.map(b =>
+    b === null || b === undefined ? 'transparent'
+    : b >= 0 ? 'rgba(0,200,150,0.85)' : 'rgba(255,77,109,0.85)'
+  );
+
+  if (basisChart) basisChart.destroy();
+  basisChart = new Chart($('basisChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: s.dates,
+      datasets: [{
+        label: 'Basis %',
+        data: s.basis,
+        backgroundColor: barColors,
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 250 },
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          borderColor: '#2a2a2a',
+          borderWidth: 1,
+          titleColor: '#888',
+          bodyColor: '#fff',
+          titleFont:  { family: 'JetBrains Mono', size: 11 },
+          bodyFont:   { family: 'JetBrains Mono', size: 12 },
+          callbacks: {
+            label: ctx => {
+              const b = ctx.raw;
+              if (b === null || b === undefined) return ' 데이터 없음';
+              const sign = b >= 0 ? '+' : '';
+              const type = b >= 0 ? 'Contango ▲' : 'Backwardation ▼';
+              return ` ${type}  ${sign}${b.toFixed(3)}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color:'#444', font:{ family:'JetBrains Mono', size:10 }, maxTicksLimit:10, maxRotation:0 },
+          grid:  { display: false }
+        },
+        y: {
+          position: 'right',
+          ticks: {
+            color:'#444',
+            font: { family:'JetBrains Mono', size:10 },
+            callback: v => v.toFixed(1) + '%'
+          },
+          grid: { color:'rgba(255,255,255,0.03)' }
+        }
+      }
+    }
+  });
+
+  updateStats(s);
+}
+
+// ── 범위 버튼 ────────────────────────────────────────────────────────────────
+function setRange(btn) {
+  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentN = parseInt(btn.dataset.n);
+  render(currentN);
+}
+
+// ── 초기화 ───────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    $('load-msg').textContent = 'btc_basis.json 로딩 중...';
+    const res = await fetch(DATA_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+
+    G.dates   = json.dates   || [];
+    G.closes  = json.closes  || [];
+    G.basis   = json.basis   || [];
+    G.futures = json.futures || [];
+
+    const updated = json.updated || '—';
+    const validBasis = G.basis.filter(b => b !== null).length;
+
+    $('statusbar').textContent =
+      `업데이트: ${updated}  ·  스팟 ${G.dates.length}일  ·  Basis ${validBasis}일  ·  출처: Yahoo Finance`;
+
+    render(currentN);
+  } catch(e) {
+    $('load-msg').textContent = '❌ 데이터 로드 실패: ' + e.message;
+    $('statusbar').textContent = '⚠ ' + e.message;
+    console.error(e);
+    return;
+  }
+
+  $('loading').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
