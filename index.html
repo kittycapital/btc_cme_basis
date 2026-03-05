@@ -55,6 +55,16 @@ body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16p
 .spin{width:38px;height:38px;border:3px solid var(--bor);border-top-color:var(--btc);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .lmsg{font-family:var(--mono);font-size:12px;color:var(--mut2)}
+/* ── 공유 버튼 ── */
+.share-wrap{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.share-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--bor);background:transparent;color:var(--mut2);font-size:12px;font-family:var(--mono);cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap}
+.share-btn:hover{border-color:#555;color:#ccc;background:rgba(255,255,255,.04)}
+.share-btn.kakao{border-color:#FEE500;color:#191919;background:#FEE500}
+.share-btn.kakao:hover{background:#ffd900;border-color:#ffd900}
+.share-btn.tg{border-color:#229ED9;color:#229ED9}
+.share-btn.tg:hover{background:rgba(34,158,217,.1)}
+.share-btn.copy:hover{border-color:#00c896;color:#00c896}
+.label-text{font-size:12px}
 </style>
 </head>
 <body>
@@ -443,6 +453,93 @@ async function init() {
 }
 
 init();
+</script>
+
+<!-- ── 공유 버튼 ── -->
+<div class="share-wrap">
+  <button class="share-btn kakao" onclick="doShare('kakao',this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.83 1.65 5.326 4.145 6.893-.193.658-.698 2.392-.8 2.765-.126.46.169.454.355.33.146-.097 2.318-1.572 3.258-2.21A11.49 11.49 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>
+    <span class="label-text">카카오톡</span>
+  </button>
+  <button class="share-btn tg" onclick="doShare('telegram',this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    <span class="label-text">텔레그램</span>
+  </button>
+  <button class="share-btn copy" onclick="doShare('link',this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <span class="label-text">링크 복사</span>
+  </button>
+</div>
+
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"></script>
+<script>
+const SHARE_URL   = 'https://herdvibe.com/117';
+const SHARE_TITLE = '비트코인 CME 콘탱고 & 백워데이션';
+const SHARE_DESC  = 'CME 선물 Basis Z-Score로 보는 기관 심리 · 과열/공포 구간 시각화';
+const KAKAO_KEY   = 'a43ed7b39fac35458f4f9df925a279b5';
+
+function ensureKakao() {
+  try {
+    if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_KEY);
+    return typeof Kakao !== 'undefined' && Kakao.isInitialized();
+  } catch(e) { return false; }
+}
+ensureKakao();
+
+function copyToClipboard(t) {
+  try { navigator.clipboard.writeText(t); } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+}
+
+function flashBtn(btn, msg) {
+  if (!btn) return;
+  const orig = btn.innerHTML;
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span class="label-text">${msg}</span>`;
+  btn.style.borderColor = '#00c896'; btn.style.color = '#00c896';
+  setTimeout(() => { btn.innerHTML = orig; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+}
+
+function doShare(type, btn) {
+  if (type === 'kakao') {
+    // 1순위: 카카오톡 SDK
+    if (ensureKakao()) {
+      try {
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: SHARE_TITLE,
+            description: SHARE_DESC,
+            imageUrl: 'https://herdvibe.com/wp-content/uploads/2024/01/herdvibe-og.png',
+            link: { mobileWebUrl: SHARE_URL, webUrl: SHARE_URL }
+          },
+          buttons: [{ title: '차트 보기', link: { mobileWebUrl: SHARE_URL, webUrl: SHARE_URL } }]
+        });
+        return;
+      } catch(e) { console.warn('Kakao SDK 실패:', e); }
+    }
+    // 2순위 폴백: 텔레그램
+    const opened = window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TITLE)}`, '_blank');
+    if (opened) return;
+    // 3순위 폴백: 링크 복사
+    copyToClipboard(SHARE_URL);
+    flashBtn(btn, '링크 복사됨!');
+    return;
+  }
+
+  if (type === 'telegram') {
+    const opened = window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TITLE)}`, '_blank');
+    if (!opened) { copyToClipboard(SHARE_URL); flashBtn(btn, '링크 복사됨!'); }
+    return;
+  }
+
+  if (type === 'link') {
+    copyToClipboard(SHARE_URL);
+    flashBtn(btn, '복사 완료!');
+  }
+}
 </script>
 </body>
 </html>
