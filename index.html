@@ -60,7 +60,7 @@ body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16p
 
 <div class="hdr">
   <div>
-    <h1>₿ 비트코인 CME 콘탱고 &amp; 백워데이션</h1>
+    <h1>비트코인 CME 콘탱고 &amp; 백워데이션</h1>
     <p>CME 선물(BTC=F) vs 현물 스프레드 · 매일 자동 업데이트</p>
   </div>
   <div class="leg">
@@ -196,8 +196,8 @@ function slice(n) {
   };
 }
 
-// 연속 구간 블록으로 배경 그리기
-function bgPlugin(basisArr) {
+// 가격 차트 배경: Z-Score 2시그마 초과 구간만 색칠
+function bgPlugin(zscoreArr) {
   return {
     id: 'bgp',
     beforeDraw({ctx, chartArea: ca, scales: {x}}) {
@@ -210,16 +210,16 @@ function bgPlugin(basisArr) {
         const x1 = Math.max(ca.left,  x.getPixelForValue(si));
         const x2 = Math.min(ca.right, x.getPixelForValue(ei));
         if (x2 > x1) {
-          ctx.fillStyle = st===1 ? 'rgba(0,200,150,.15)' : 'rgba(255,77,109,.15)';
+          ctx.fillStyle = st === 1 ? 'rgba(255,77,109,0.18)' : 'rgba(0,200,150,0.18)';
           ctx.fillRect(x1, ca.top, x2-x1, ca.height);
         }
       };
-      basisArr.forEach((b, i) => {
-        if (b == null) { flush(i); si=null; st=null; return; }
-        const t = b>=0 ? 1 : -1;
-        if (t !== st) { flush(i); si=i; st=t; }
+      zscoreArr.forEach((z, i) => {
+        // 2시그마 초과 구간만
+        const t = (z != null && z >= 2) ? 1 : (z != null && z <= -2) ? -1 : null;
+        if (t !== st) { flush(i); si = (t !== null) ? i : null; st = t; }
       });
-      flush(basisArr.length);
+      flush(zscoreArr.length);
       ctx.restore();
     }
   };
@@ -280,7 +280,7 @@ function render(n) {
   if (PC) { PC.destroy(); PC = null; }
   PC = new Chart($('pc'), {
     type:'line',
-    plugins:[bgPlugin(s.basis)],
+    plugins:[bgPlugin(s.zscore)],
     data:{
       labels: s.dates,
       datasets:[{
@@ -351,18 +351,18 @@ function render(n) {
     beforeDraw({ctx, chartArea: ca, scales: {x, y}}) {
       if (!ca) return;
       ctx.save();
-      // +2 이상 빨강 배경
-      const y2pos = y.getPixelForValue(2);
-      const ytop  = ca.top;
-      if (y2pos > ytop) {
-        ctx.fillStyle = 'rgba(255,77,109,0.12)';
-        ctx.fillRect(ca.left, ytop, ca.width, y2pos - ytop);
+      // +2 이상 영역만 빨강
+      const y2   = y.getPixelForValue(2);
+      const ytop = ca.top;
+      if (y2 > ytop) {
+        ctx.fillStyle = 'rgba(255,77,109,0.10)';
+        ctx.fillRect(ca.left, ytop, ca.width, y2 - ytop);
       }
-      // -2 이하 초록 배경
+      // -2 이하 영역만 초록
       const ym2  = y.getPixelForValue(-2);
       const ybot = ca.bottom;
       if (ym2 < ybot) {
-        ctx.fillStyle = 'rgba(0,200,150,0.12)';
+        ctx.fillStyle = 'rgba(0,200,150,0.10)';
         ctx.fillRect(ca.left, ym2, ca.width, ybot - ym2);
       }
       ctx.restore();
@@ -379,10 +379,8 @@ function render(n) {
         backgroundColor: s.zscore.map(z => {
           if (z == null)  return 'transparent';
           if (z >= 2)     return 'rgba(255,77,109,0.9)';
-          if (z >= 1)     return 'rgba(245,166,35,0.8)';
           if (z <= -2)    return 'rgba(0,200,150,0.9)';
-          if (z <= -1)    return 'rgba(77,166,255,0.8)';
-          return 'rgba(100,100,100,0.5)';
+          return 'rgba(80,80,80,0.35)';  // 중립 구간: 흐린 회색
         }),
         borderWidth: 0,
         barPercentage: 1.0,
