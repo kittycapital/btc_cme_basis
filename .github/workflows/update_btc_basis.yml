@@ -2,8 +2,8 @@ name: Update BTC CME Basis Data
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 매일 UTC 02:00 (한국시간 11:00) — CME 정산 후
-  workflow_dispatch:       # 수동 실행 가능
+    - cron: '0 2 * * *'   # 매일 UTC 02:00 (KST 11:00)
+  workflow_dispatch:
 
 jobs:
   update:
@@ -17,9 +17,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install yfinance pandas numpy
+        run: pip install yfinance pandas numpy nasdaq-data-link
 
       - name: Fetch BTC basis data
+        env:
+          NASDAQ_API_KEY: ${{ secrets.NASDAQ }}
         run: python scripts/fetch_btc_basis.py
 
       - name: Commit & push
@@ -27,5 +29,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/btc_basis.json
-          git diff --staged --quiet || git commit -m "chore: BTC basis data update $(date +'%Y-%m-%d')"
+          git diff --staged --quiet || git commit -m "chore: BTC basis update $(date +'%Y-%m-%d')"
           git push
