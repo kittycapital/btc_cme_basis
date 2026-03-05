@@ -244,8 +244,8 @@ body {
   <button class="rbtn" data-n="90"  onclick="setRange(this)">3개월</button>
   <button class="rbtn" data-n="180" onclick="setRange(this)">6개월</button>
   <button class="rbtn" data-n="365" onclick="setRange(this)">1년</button>
-  <button class="rbtn" data-n="730" onclick="setRange(this)">2년</button>
-  <button class="rbtn active" data-n="0" onclick="setRange(this)">전체</button>
+  <button class="rbtn active" data-n="730" onclick="setRange(this)">2년</button>
+  <button class="rbtn" data-n="0" onclick="setRange(this)">전체</button>
 </div>
 
 <!-- 메인 차트 -->
@@ -283,7 +283,7 @@ const DATA_URL = './data/btc_basis.json';
 let G = { dates:[], closes:[], basis:[], futures:[] };
 let priceChart = null;
 let basisChart = null;
-let currentN = 0;
+let currentN = 730;
 
 // ── 유틸 ─────────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -314,16 +314,36 @@ function makeBgPlugin(basisArr) {
       ctx.beginPath();
       ctx.rect(ca.left, ca.top, ca.width, ca.height);
       ctx.clip();
+
+      // 연속 구간을 묶어서 하나의 rect로 그림 (줄무늬 방지)
+      let segStart = null;
+      let segType  = null;
+
+      const drawSeg = (endIdx) => {
+        if (segStart === null) return;
+        const x1 = scales.x.getPixelForValue(segStart);
+        const x2 = scales.x.getPixelForValue(endIdx);
+        ctx.fillStyle = segType === 'c'
+          ? 'rgba(0,200,150,0.13)'
+          : 'rgba(255,77,109,0.13)';
+        ctx.fillRect(x1, ca.top, x2 - x1, ca.height);
+      };
+
       for (let i = 0; i < n; i++) {
         const b = basisArr[i];
-        if (b === null || b === undefined) continue;
-        const x1 = scales.x.getPixelForValue(i);
-        const x2 = i < n - 1 ? scales.x.getPixelForValue(i + 1) : x1 + 2;
-        ctx.fillStyle = b >= 0
-          ? 'rgba(0,200,150,0.11)'
-          : 'rgba(255,77,109,0.11)';
-        ctx.fillRect(x1, ca.top, x2 - x1, ca.height);
+        if (b === null || b === undefined) {
+          drawSeg(i);
+          segStart = null; segType = null;
+          continue;
+        }
+        const type = b >= 0 ? 'c' : 'b';
+        if (type !== segType) {
+          drawSeg(i);
+          segStart = i;
+          segType  = type;
+        }
       }
+      drawSeg(n - 1);
       ctx.restore();
     }
   };
