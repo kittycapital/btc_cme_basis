@@ -6,6 +6,8 @@
 <title>BTC CME Basis | Contango & Backwardation</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -95,28 +97,21 @@ body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16p
 </div>
 
 <div class="cbox">
-  <div class="ctitle">BTC 현물 (USD, 로그) &nbsp;·&nbsp; <span style="color:var(--grn)">■</span> 콘탱고 &nbsp;<span style="color:var(--red)">■</span> 백워데이션</div>
+  <div class="ctitle">BTC 현물 (USD, 로그) &nbsp;·&nbsp; <span style="color:var(--grn)">■</span> 과열 &nbsp;<span style="color:var(--red)">■</span> 공포 &nbsp;<span style="color:var(--mut);font-size:9px;margin-left:8px">드래그: 줌 &nbsp;|&nbsp; 더블클릭: 초기화</span></div>
   <div class="chart-wrap h270"><canvas id="pc"></canvas></div>
+</div>
+<div class="cbox">
+  <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center">
+    <span>CME Basis Z-Score (롤링 730일) &nbsp;·&nbsp; <span style="color:var(--red)">■</span> 과열(+2↑) &nbsp;<span style="color:var(--grn)">■</span> 공포(−2↓)</span>
+    <span style="color:var(--mut);font-size:9px">역추세 신호 — 극단값이 매수/매도 타이밍</span>
+  </div>
+  <div class="chart-wrap h150"><canvas id="zc"></canvas></div>
 </div>
 <div class="cbox">
   <div class="ctitle">CME Basis % &nbsp;·&nbsp; 콘탱고(+) / 백워데이션(−)</div>
   <div class="chart-wrap h120"><canvas id="bc"></canvas></div>
 </div>
-<div class="cbox">
-  <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center">
-    <span>CME Basis Z-Score (롤링 365일) &nbsp;·&nbsp; <span style="color:var(--red)">■</span> 과열(+2↑) &nbsp;<span style="color:var(--grn)">■</span> 공포(−2↓)</span>
-    <span style="color:var(--mut);font-size:9px">역추세 신호 — 극단값이 매수/매도 타이밍</span>
-  </div>
-  <div class="chart-wrap h150"><canvas id="zc"></canvas></div>
-</div>
 <div class="sb" id="sb">로딩 중...</div>
-
-<div class="guide">
-  <strong>📌 해석 가이드</strong><br>
-  <strong style="color:var(--grn)">콘탱고 (+)</strong>: 선물 &gt; 현물 → CME 기관 강세. 강세장 구간에서 주로 나타남.<br>
-  <strong style="color:var(--red)">백워데이션 (−)</strong>: 선물 &lt; 현물 → 기관 리스크오프. FTX·LUNA 사태 직전 선행 출현.<br>
-  <span style="color:#3a3a3a">※ Yahoo Finance BTC=F(CME 최근월물) 기준. 롤오버 왜곡(±15%) 자동 필터링. 매일 KST 11시 업데이트.</span>
-</div>
 
 <script>
 // ── 설정 ─────────────────────────────────────────────────────────────────────
@@ -223,6 +218,40 @@ function updateStats(s) {
   }
 }
 
+// ── 공통 줌 설정 (드래그 줌 + 휠 줌, 더블클릭 초기화) ─────────────────────────
+function zoomCfg(onZoom) {
+  return {
+    zoom: {
+      drag: { enabled: true, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1 },
+      wheel: { enabled: true, speed: 0.1 },
+      pinch: { enabled: true },
+      mode: 'x',
+      onZoomComplete: onZoom,
+    },
+    pan: { enabled: false },
+    limits: { x: { minRange: 10 } },
+  };
+}
+
+// 세 차트 X축 줌 동기화
+function syncZoom(sourceChart) {
+  const { min, max } = sourceChart.scales.x;
+  [PC, ZC, BC].forEach(c => {
+    if (!c || c === sourceChart) return;
+    c.zoomScale('x', { min, max }, 'none');
+    c.update('none');
+  });
+}
+
+function resetAllZoom() {
+  [PC, ZC, BC].forEach(c => c && c.resetZoom());
+}
+
+// 더블클릭으로 줌 초기화
+['pc','zc','bc'].forEach(id => {
+  document.getElementById(id).addEventListener('dblclick', resetAllZoom);
+});
+
 // ── 공통 스타일 ───────────────────────────────────────────────────────────────
 const tt = {
   backgroundColor:'#1a1a1a', borderColor:'#2a2a2a', borderWidth:1,
@@ -256,8 +285,8 @@ function render(n) {
       interaction: {intersect:false, mode:'index'},
       plugins: {
         legend: {display:false},
+        zoom: zoomCfg(() => syncZoom(PC)),
         tooltip: {...tt, callbacks: {
-          label: ctx => ' 현물: ' + fmt(ctx.raw),
           afterLabel: ctx => {
             const ft = s.futures[ctx.dataIndex], b = s.basis[ctx.dataIndex], z = s.zscore[ctx.dataIndex];
             const out = [];
@@ -297,6 +326,7 @@ function render(n) {
       interaction: {intersect:false, mode:'index'},
       plugins: {
         legend: {display:false},
+        zoom: zoomCfg(() => syncZoom(BC)),
         tooltip: {...tt, callbacks: {
           label: ctx => ctx.raw==null ? ' 데이터 없음'
             : ` ${ctx.raw>=0?'콘탱고 ▲':'백워데이션 ▼'}  ${ctx.raw>=0?'+':''}${ctx.raw.toFixed(3)}%`
@@ -348,6 +378,7 @@ function render(n) {
       interaction: {intersect:false, mode:'index'},
       plugins: {
         legend: {display:false},
+        zoom: zoomCfg(() => syncZoom(ZC)),
         tooltip: {...tt, callbacks: {
           label: ctx => {
             const z = ctx.raw;
@@ -380,6 +411,7 @@ function go(n, btn) {
   curN = n;
   document.querySelectorAll('.rb').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
+  resetAllZoom();
   render(n);
 }
 
