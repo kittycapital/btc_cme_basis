@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install yfinance pandas numpy nasdaq-data-link
+        run: pip install yfinance pandas numpy requests
 
       - name: Fetch BTC basis data
         env:
