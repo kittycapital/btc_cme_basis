@@ -17,7 +17,7 @@ import nasdaqdatalink
 from datetime import datetime
 
 # ── 설정 ─────────────────────────────────────────────────────────────────────
-NASDAQ_KEY   = os.environ.get("NASDAQ_API_KEY", "")
+NASDAQ_KEY   = os.environ.get("NASDAQ_API_KEY", "").strip()
 START_DATE   = "2017-12-01"
 OUTPUT_PATH  = "data/btc_basis.json"
 ROLL_WINDOW  = 730    # Z-Score 롤링 윈도우 (2년)
