@@ -56,14 +56,18 @@ body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16p
 @keyframes sp{to{transform:rotate(360deg)}}
 .lmsg{font-family:var(--mono);font-size:12px;color:var(--mut2)}
 /* ── 공유 버튼 ── */
-.share-wrap{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}
-.share-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--bor);background:transparent;color:var(--mut2);font-size:12px;font-family:var(--mono);cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap}
-.share-btn:hover{border-color:#555;color:#ccc;background:rgba(255,255,255,.04)}
-.share-btn.kakao{border-color:#FEE500;color:#191919;background:#FEE500}
-.share-btn.kakao:hover{background:#ffd900;border-color:#ffd900}
-.share-btn.tg{border-color:#229ED9;color:#229ED9}
-.share-btn.tg:hover{background:rgba(34,158,217,.1)}
-.share-btn.copy:hover{border-color:#00c896;color:#00c896}
+.share-bar{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:16px;flex-wrap:wrap}
+.share-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;border:1px solid #2a2a2a;background:transparent;color:#666;font-size:11px;font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;transition:all .18s;text-decoration:none;white-space:nowrap;line-height:1}
+.share-btn svg{flex-shrink:0}
+.share-btn:hover{border-color:#444;color:#aaa;background:rgba(255,255,255,.05)}
+.share-btn--x{border-color:#333}
+.share-btn--x:hover{border-color:#fff;color:#fff}
+.share-btn--kakao{border-color:#FEE500;background:#FEE500;color:#191919 !important}
+.share-btn--kakao:hover{background:#ffd900;border-color:#ffd900}
+.share-btn--tg{border-color:#229ED9;color:#229ED9}
+.share-btn--tg:hover{background:rgba(34,158,217,.1);border-color:#229ED9;color:#229ED9}
+.share-btn--copy:hover{border-color:#00c896;color:#00c896}
+.share-btn .lbl{font-size:11px}
 .label-text{font-size:12px}
 </style>
 </head>
@@ -456,18 +460,22 @@ init();
 </script>
 
 <!-- ── 공유 버튼 ── -->
-<div class="share-wrap">
-  <button class="share-btn kakao" onclick="doShare('kakao',this)">
+<div class="share-bar">
+  <button class="share-btn share-btn--x" onclick="doShare('twitter',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    <span class="lbl">X 공유</span>
+  </button>
+  <button class="share-btn share-btn--kakao" onclick="doShare('kakao',this)">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.83 1.65 5.326 4.145 6.893-.193.658-.698 2.392-.8 2.765-.126.46.169.454.355.33.146-.097 2.318-1.572 3.258-2.21A11.49 11.49 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>
-    <span class="label-text">카카오톡</span>
+    <span class="lbl">카카오톡</span>
   </button>
-  <button class="share-btn tg" onclick="doShare('telegram',this)">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-    <span class="label-text">텔레그램</span>
+  <button class="share-btn share-btn--tg" onclick="doShare('telegram',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    <span class="lbl">텔레그램</span>
   </button>
-  <button class="share-btn copy" onclick="doShare('link',this)">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-    <span class="label-text">링크 복사</span>
+  <button class="share-btn share-btn--copy" onclick="doShare('link',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <span class="lbl">링크 복사</span>
   </button>
 </div>
 
@@ -503,6 +511,19 @@ function flashBtn(btn, msg) {
 }
 
 function doShare(type, btn) {
+  const eu = encodeURIComponent(SHARE_URL);
+  const et = encodeURIComponent(SHARE_TITLE + ' | herdvibe.com');
+
+  function openUrl(url) {
+    try { window.parent.postMessage({ type: 'openUrl', url }, '*'); } catch(e) {}
+    window.open(url, '_blank');
+  }
+
+  if (type === 'twitter') {
+    openUrl(`https://twitter.com/intent/tweet?text=${et}&url=${eu}`);
+    return;
+  }
+
   if (type === 'kakao') {
     // 1순위: 카카오톡 SDK
     if (ensureKakao()) {
@@ -520,18 +541,17 @@ function doShare(type, btn) {
         return;
       } catch(e) { console.warn('Kakao SDK 실패:', e); }
     }
-    // 2순위 폴백: 텔레그램
-    const opened = window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TITLE)}`, '_blank');
+    // 2순위: 텔레그램
+    const opened = window.open(`https://t.me/share/url?url=${eu}&text=${et}`, '_blank');
     if (opened) return;
-    // 3순위 폴백: 링크 복사
+    // 3순위: 링크 복사
     copyToClipboard(SHARE_URL);
     flashBtn(btn, '링크 복사됨!');
     return;
   }
 
   if (type === 'telegram') {
-    const opened = window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TITLE)}`, '_blank');
-    if (!opened) { copyToClipboard(SHARE_URL); flashBtn(btn, '링크 복사됨!'); }
+    const opened = openUrl(`https://t.me/share/url?url=${eu}&text=${et}`);
     return;
   }
 
@@ -543,3 +563,12 @@ function doShare(type, btn) {
 </script>
 </body>
 </html>
+<!-- ── 사용 가이드 박스 (imweb 삽입용) ── -->
+<!--
+<div style="background:#0a0a0a !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:12px !important;padding:24px 20px !important;margin-bottom:20px !important;font-family:'Noto Sans KR',sans-serif !important;">
+  <p style="color:#fff !important;font-size:15px !important;font-weight:700 !important;margin:0 0 10px 0 !important;line-height:1.6 !important;">기관의 속마음을 읽다: CME 비트코인 콘탱고 & 백워데이션</p>
+  <p style="color:#999 !important;font-size:13px !important;font-weight:400 !important;margin:0 0 12px 0 !important;line-height:1.85 !important;">CME(시카고상품거래소) 비트코인 선물은 기관 투자자와 헤지펀드가 주도하는 시장입니다. 선물 가격이 현물보다 높은 상태를 콘탱고(Contango), 낮은 상태를 백워데이션(Backwardation)이라고 합니다. 이 차이(Basis)는 기관이 비트코인의 미래를 어떻게 보고 있는지를 직접적으로 반영합니다. 개인 투자자 중심의 펀딩피와 달리, CME Basis는 기관의 실제 포지셔닝을 보여주는 보다 신뢰도 높은 심리 지표입니다.</p>
+  <p style="color:#999 !important;font-size:13px !important;font-weight:400 !important;margin:0 0 12px 0 !important;line-height:1.85 !important;">HerdVibe는 단순한 Basis 수치가 아닌 730일(2년) 롤링 Z-Score를 산출합니다. Z-Score는 현재 Basis가 역사적 평균 대비 얼마나 극단적인지를 표준편차 단위로 측정합니다. +2 이상이면 기관 레버리지 롱이 과도하게 쌓인 과열 구간으로 신규 매수에 주의가 필요하고, -2 이하이면 기관마저 공포에 빠진 극단적 비관 구간으로 중장기 매수 기회가 싹트는 역추세 신호입니다. 2022년 FTX 붕괴, LUNA 사태 직전에도 백워데이션이 선행하여 출현했습니다.</p>
+  <p style="color:#999 !important;font-size:13px !important;font-weight:400 !important;margin:0 !important;line-height:1.85 !important;">차트 배경의 빨간 구간은 Z-Score +2 초과(과열), 초록 구간은 -2 미만(극단 공포)입니다. 범위 버튼으로 원하는 기간을 선택하고, 드래그로 특정 구간을 확대해 보세요. 더블클릭하면 원래 뷰로 돌아옵니다. BTC 현물 가격과 Z-Score 극단 구간이 겹치는 시점을 공포탐욕지수·RSI 시그널 대시보드와 교차 검증하면 매수·매도 타이밍을 보다 정밀하게 잡을 수 있습니다.</p>
+</div>
+-->
