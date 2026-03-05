@@ -495,11 +495,18 @@ function ensureKakao() {
 ensureKakao();
 
 function copyToClipboard(t) {
-  try { navigator.clipboard.writeText(t); } catch(e) {
+  // 1순위: 부모 페이지에 postMessage로 위임 (iframe 복사 차단 우회)
+  try { window.parent.postMessage({ type: 'clipboard', text: t }, '*'); } catch(e) {}
+  // 2순위: 직접 clipboard API
+  try { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t); return; } } catch(e) {}
+  // 3순위: execCommand 폴백
+  try {
     const ta = document.createElement('textarea');
-    ta.value = t; document.body.appendChild(ta); ta.select();
+    ta.value = t; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed;left:0;top:0;opacity:0;width:1px;height:1px;';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, t.length);
     document.execCommand('copy'); document.body.removeChild(ta);
-  }
+  } catch(e) {}
 }
 
 function flashBtn(btn, msg) {
