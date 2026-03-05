@@ -174,7 +174,7 @@ function bgPlugin(zscoreArr) {
         const x1 = Math.max(ca.left, x.getPixelForValue(si));
         const x2 = Math.min(ca.right, x.getPixelForValue(ei));
         if (x2 > x1) {
-          ctx.fillStyle = st === 1 ? 'rgba(255,77,109,0.18)' : 'rgba(0,200,150,0.18)';
+          ctx.fillStyle = st === 1 ? 'rgba(255,77,109,0.35)' : 'rgba(0,200,150,0.30)';
           ctx.fillRect(x1, ca.top, x2 - x1, ca.height);
         }
       };
@@ -365,8 +365,8 @@ function render(n) {
       ctx.save();
       const y2  = y.getPixelForValue(2),  ytop = ca.top;
       const ym2 = y.getPixelForValue(-2), ybot = ca.bottom;
-      if (y2 > ytop)  { ctx.fillStyle='rgba(255,77,109,0.10)'; ctx.fillRect(ca.left, ytop, ca.width, y2-ytop); }
-      if (ym2 < ybot) { ctx.fillStyle='rgba(0,200,150,0.10)';  ctx.fillRect(ca.left, ym2,  ca.width, ybot-ym2); }
+      if (y2 > ytop)  { ctx.fillStyle='rgba(255,77,109,0.22)'; ctx.fillRect(ca.left, ytop, ca.width, y2-ytop); }
+      if (ym2 < ybot) { ctx.fillStyle='rgba(0,200,150,0.20)';  ctx.fillRect(ca.left, ym2,  ca.width, ybot-ym2); }
       ctx.restore();
     }
   };
