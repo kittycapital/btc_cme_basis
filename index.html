@@ -17,9 +17,9 @@
 }
 body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16px 32px}
 
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-.hdr h1{font-size:16px;font-weight:700;color:#fff}
-.hdr p{font-size:11px;color:var(--mut2);margin-top:3px;font-family:var(--mono)}
+.hdr{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;text-align:center;flex-direction:column;align-items:center}
+.hdr h1{font-size:18px;font-weight:700;color:#fff;text-align:center}
+.hdr p{font-size:11px;color:var(--mut2);margin-top:3px;font-family:var(--mono);text-align:center}
 .leg{display:flex;gap:14px;font-size:12px;font-family:var(--mono);align-items:center}
 .leg-i{display:flex;align-items:center;gap:5px}
 .dot{width:9px;height:9px;border-radius:2px}
@@ -59,20 +59,20 @@ body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16p
 
 <div class="hdr">
   <div>
-    <h1>₿ BTC CME Basis — Contango &amp; Backwardation</h1>
+    <h1>₿ 비트코인 CME 콘탱고 &amp; 백워데이션</h1>
     <p>CME 선물(BTC=F) vs 현물 스프레드 · 매일 자동 업데이트</p>
   </div>
   <div class="leg">
-    <div class="leg-i"><div class="dot" style="background:var(--grn)"></div><span style="color:var(--grn)">Contango</span></div>
-    <div class="leg-i"><div class="dot" style="background:var(--red)"></div><span style="color:var(--red)">Backwardation</span></div>
+    <div class="leg-i"><div class="dot" style="background:var(--grn)"></div><span style="color:var(--grn)">콘탱고</span></div>
+    <div class="leg-i"><div class="dot" style="background:var(--red)"></div><span style="color:var(--red)">백워데이션</span></div>
   </div>
 </div>
 
 <div class="stats">
   <div class="card"><div class="cl">BTC 현물</div><div class="cv" style="color:var(--btc)" id="s0">—</div><div class="cs" id="s0d">—</div></div>
   <div class="card"><div class="cl">현재 Basis</div><div class="cv" id="s1" style="color:#fff">—</div><div class="cs" id="s1t">—</div></div>
-  <div class="card"><div class="cl">Contango 비율</div><div class="cv" style="color:var(--grn)" id="s2">—</div><div class="cs" id="s2d">—</div></div>
-  <div class="card"><div class="cl">Backwardation</div><div class="cv" style="color:var(--red)" id="s3">—</div><div class="cs" id="s3d">—</div></div>
+  <div class="card"><div class="cl">콘탱고 비율</div><div class="cv" style="color:var(--grn)" id="s2">—</div><div class="cs" id="s2d">—</div></div>
+  <div class="card"><div class="cl">백워데이션 비율</div><div class="cv" style="color:var(--red)" id="s3">—</div><div class="cs" id="s3d">—</div></div>
 </div>
 
 <div class="rbtns">
@@ -84,19 +84,19 @@ body{background:var(--bg);color:#e0e0e0;font-family:var(--sans);padding:20px 16p
 </div>
 
 <div class="cbox">
-  <div class="ctitle">BTC 현물 (USD, 로그) &nbsp;·&nbsp; <span style="color:var(--grn)">■</span> Contango &nbsp;<span style="color:var(--red)">■</span> Backwardation</div>
+  <div class="ctitle">BTC 현물 (USD, 로그) &nbsp;·&nbsp; <span style="color:var(--grn)">■</span> 콘탱고 &nbsp;<span style="color:var(--red)">■</span> 백워데이션</div>
   <div class="chart-wrap h270"><canvas id="pc"></canvas></div>
 </div>
 <div class="cbox">
-  <div class="ctitle">CME Basis % &nbsp;·&nbsp; 프리미엄(+) / 디스카운트(−)</div>
+  <div class="ctitle">CME Basis % &nbsp;·&nbsp; 콘탱고(+) / 백워데이션(−)</div>
   <div class="chart-wrap h120"><canvas id="bc"></canvas></div>
 </div>
 <div class="sb" id="sb">로딩 중...</div>
 
 <div class="guide">
   <strong>📌 해석 가이드</strong><br>
-  <strong style="color:var(--grn)">Contango (+)</strong>: 선물 &gt; 현물 → CME 기관 강세. 강세장 구간에서 주로 나타남.<br>
-  <strong style="color:var(--red)">Backwardation (−)</strong>: 선물 &lt; 현물 → 기관 리스크오프. FTX·LUNA 사태 직전 선행 출현.<br>
+  <strong style="color:var(--grn)">콘탱고 (+)</strong>: 선물 &gt; 현물 → CME 기관 강세. 강세장 구간에서 주로 나타남.<br>
+  <strong style="color:var(--red)">백워데이션 (−)</strong>: 선물 &lt; 현물 → 기관 리스크오프. FTX·LUNA 사태 직전 선행 출현.<br>
   <span style="color:#3a3a3a">※ Yahoo Finance BTC=F(CME 최근월물) 기준. 롤오버 왜곡(±15%) 자동 필터링. 매일 KST 11시 업데이트.</span>
 </div>
 
@@ -111,23 +111,27 @@ const $  = id => document.getElementById(id);
 const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
 
 async function fetchCME() {
-  const urls = [
-    'https://query1.finance.yahoo.com/v8/finance/chart/BTC=F?range=10y&interval=1d',
+  const target = 'https://query1.finance.yahoo.com/v8/finance/chart/BTC=F?range=10y&interval=1d';
+  const attempts = [
+    target,
     'https://query2.finance.yahoo.com/v8/finance/chart/BTC=F?range=10y&interval=1d',
+    'https://corsproxy.io/?' + encodeURIComponent(target),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
   ];
-  for (const url of urls) {
+  for (const url of attempts) {
     try {
       const r = await fetch(url, {signal: AbortSignal.timeout(12000)});
       if (!r.ok) continue;
       const j = await r.json();
-      const res = j.chart.result[0];
+      const res = j.chart?.result?.[0];
+      if (!res) continue;
       const map = {};
       res.timestamp.forEach((ts, i) => {
         const v = res.indicators.quote[0].close[i];
         if (v != null) map[new Date(ts*1000).toISOString().split("T")[0]] = v;
       });
-      return map;
-    } catch(e) { console.warn(e); }
+      if (Object.keys(map).length > 0) return map;
+    } catch(e) { console.warn('fetch failed:', url, e.message); }
   }
   return null;
 }
@@ -304,8 +308,8 @@ async function init() {
   calcBasis(futMap);
   const vb = G.basis.filter(b=>b!=null).length;
   $('sb').textContent = futMap && vb>0
-    ? `✓ CME ${vb}일 로드 · Yahoo Finance · 현물 ${G.dates.length}일 내장`
-    : '⚠ CME 선물 로드 실패 (로컬 CORS 차단) · GitHub Pages에서 정상 동작';
+    ? `✓ CME 선물 ${vb}일 로드 완료 · Yahoo Finance · 현물 ${G.dates.length}일 내장`
+    : '⚠ CME 선물 데이터 로드 실패 · GitHub Actions로 data/btc_basis.json 생성 후 DATA_URL 설정 필요';
   render(curN);
   $('ov').style.display = 'none';
 }
