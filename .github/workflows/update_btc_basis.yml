@@ -2,7 +2,7 @@ name: Update BTC CME Basis Data
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 매일 UTC 02:00 (KST 11:00)
+    - cron: '0 2 * * 1-5'   # 평일만 UTC 02:00 (KST 11:00)
   workflow_dispatch:
 
 jobs:
